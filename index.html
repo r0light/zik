@@ -2,6 +2,8 @@
 <html>
 	<head>
 		<title>ZIK: Zeit-ist-kostbar</title>
+		<meta charset="utf-8"/>
+		<link rel="icon" type="image/png" href="assets/clock_small.png">
 		<style>
 			body {
 				margin: 0px;
@@ -35,6 +37,9 @@
 
 		<div id="controls" >
 			<table>
+				<tr>
+					<td colspan="2" style="text-align: right;" id="countdown">00:00</td>
+				</tr>
 				<tr>
 					<td>Time period:</td>
 					<td><input type="text" id="min" title="Number between 1 and 60" required autofocus pattern="\d+"></td>
@@ -238,6 +243,7 @@
 				backgroundArc.setRotationDeg(0);
 
 				updateClock(0);
+				updateCountdown(0);
 			}
 
 			// start clock
@@ -274,17 +280,20 @@
 			function updateHandler() {
 				var now = new Date().getTime();
 
-				var remainingMinutes = Math.ceil((destDate - now) / (timeScaleFactor * 1000));
+				var remainingSeconds = Math.ceil((destDate - now) / 1000)
+				var remainingMinutes = Math.ceil(remainingSeconds / timeScaleFactor);
 
 				if (remainingMinutes > 1) {
 					// Clock still running...
 					remainingMinutes = remainingMinutes - 1;
 					updateClock(remainingMinutes);
+					updateCountdown(remainingSeconds - 60)
 				} else {
 					// Time's up...
 					clearTimeout(updateTimer);
 					showTimeUp(true);
 					updateClock(0);
+					updateCountdown(0)
 				}
 			}
 
@@ -302,6 +311,21 @@
 				}
 
 				layer.draw();
+			}
+
+			// update countdown where minutes and seconds are shown
+			function updateCountdown(remainingSeconds) {
+				var remainingMinutes = Math.floor(remainingSeconds / 60);
+				var secondsRest = remainingSeconds % 60;
+				document.getElementById("countdown").innerHTML = (padZero(remainingMinutes) + ":" + padZero(secondsRest));
+			}
+
+			function padZero(number) {
+				let result = number.toString();
+				if (result.length === 1) {
+					result = "0".concat(result);
+				}
+				return result;
 			}
 
 			// show time's-up notification
@@ -323,10 +347,12 @@
 			// update color of background arc
 			function updateColor(remainingMinutes) {
 				if (typeof(totalRunningTime) != 'undefined') {
-					if (remainingMinutes == Math.floor(greenUntil * totalRunningTime)) {
-						backgroundArc.setFill(color.yellow);
-					} else if (remainingMinutes == Math.floor(yellowUntil * totalRunningTime)) {
+					if (remainingMinutes <= Math.floor(yellowUntil * totalRunningTime)) {
 						backgroundArc.setFill(color.red);
+					} else if (remainingMinutes <= Math.floor(greenUntil * totalRunningTime)) {
+						backgroundArc.setFill(color.yellow);
+					} else {
+						backgroundArc.setFill(color.green)
 					}
 				}
 			}
